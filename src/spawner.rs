@@ -5,7 +5,7 @@ pub fn spawn_enemy(mut commands: Commands) {
     let column = rng.gen_range(0..3);
 
     let pos_x = SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
-    let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE - (HALF_TILE * 4.);
+    let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE;
 
     commands
         .spawn_bundle(SpriteBundle {
