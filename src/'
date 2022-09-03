@@ -183,18 +183,29 @@ fn move_player(
     player_transform.translation.x += direction;
 }
 
-fn check_collisions(
+fn reset_game(
     mut commands: Commands,
-    player_query: Query<&Transform, With<Player>>,
-    enemies_query: Query<(Entity, &Transform), With<Enemy>>,
+    enemies_query: Query<Entity, With<Enemy>>,
     mut scoreboard: ResMut<Scoreboard>,
+) {
+    scoreboard.highscore = scoreboard.score;
+    scoreboard.score = 0;
+
+    for (entity) in &enemies_query {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn check_collisions(
+    player_query: Query<&Transform, With<Player>>,
+    enemies_query: Query<&Transform, With<Enemy>>,
     mut collision_events: EventWriter<CollisionEvent>,
 ) {
     let player_transform = player_query.single();
     let top_bound = -360.0 + TILE_SIZE * 4.0;
     let bottom_bound = -360.0 - TILE_SIZE * 4.0;
 
-    for (_, enemy_transform) in &enemies_query {
+    for enemy_transform in &enemies_query {
         let enemy_y = enemy_transform.translation.y;
         let enemy_x = enemy_transform.translation.x;
 
@@ -203,13 +214,6 @@ fn check_collisions(
             && enemy_x == player_transform.translation.x
         {
             collision_events.send_default();
-
-            for (entity, _) in &enemies_query {
-                commands.entity(entity).despawn();
-            }
-
-            scoreboard.highscore = scoreboard.score;
-            scoreboard.score = 0;
         }
     }
 }
