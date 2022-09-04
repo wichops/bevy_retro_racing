@@ -30,6 +30,9 @@ mod prelude {
     pub struct Enemy;
 
     #[derive(Component)]
+    pub struct Wall;
+
+    #[derive(Component)]
     pub struct Car {
         pub column: usize,
     }
@@ -62,20 +65,31 @@ fn main() {
         .add_startup_system(setup)
         .add_startup_system(spawn_player)
         .add_startup_system(spawn_enemy)
+        .add_startup_system(spawn_walls)
         .add_event::<CollisionEvent>()
-        .add_system(check_collisions)
         .add_system(update_scoreboard)
         .add_system(move_player.before(check_collisions))
         .add_system(play_explosion_sound.after(check_collisions))
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.9))
-                .with_system(spawn_enemy)
+                .with_run_criteria(FixedTimestep::step(0.5))
+                .with_system(spawn_walls),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(1.0))
                 .with_system(increment_scoreboard),
         )
         .add_system_set(
             SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(0.8))
+                .with_system(spawn_enemy),
+        )
+        .add_system_set(
+            SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.08))
+                .with_system(check_collisions)
+                .with_system(move_wall)
                 .with_system(move_enemy.before(check_collisions)),
         )
         .run();
@@ -105,11 +119,6 @@ fn setup(mut commands: Commands, mut windows: ResMut<Windows>, asset_server: Res
                     color: Color::BLACK,
                 },
             ),
-            TextSection::from_style(TextStyle {
-                font: asset_server.load("fonts/Terminess-Mono.ttf"),
-                font_size: 40.0,
-                color: Color::BLACK,
-            }),
             TextSection::from_style(TextStyle {
                 font: asset_server.load("fonts/Terminess-Mono.ttf"),
                 font_size: 40.0,
@@ -165,7 +174,16 @@ fn move_enemy(mut commands: Commands, mut query: Query<(Entity, &mut Transform),
     for (entity, mut enemy_transform) in query.iter_mut() {
         enemy_transform.translation.y -= TILE_SIZE;
         if enemy_transform.translation.y < SCREEN_Y * 2.0 {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+}
+
+fn move_wall(mut commands: Commands, mut query: Query<(Entity, &mut Transform), With<Wall>>) {
+    for (entity, mut wall_transform) in query.iter_mut() {
+        wall_transform.translation.y -= TILE_SIZE;
+        if wall_transform.translation.y < SCREEN_Y * 2.0 {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
@@ -199,7 +217,7 @@ fn check_collisions(
 ) {
     let player_transform = player_query.single();
     let top_bound = -360.0 + TILE_SIZE * 4.0;
-    let bottom_bound = -360.0 - TILE_SIZE * 4.0 + HALF_TILE;
+    let bottom_bound = -360.0 - TILE_SIZE * 4.0 - HALF_TILE;
 
     for (_, enemy_transform) in &enemies_query {
         let enemy_y = enemy_transform.translation.y;
