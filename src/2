@@ -31,8 +31,8 @@ mod prelude {
 
     #[derive(Component)]
     pub struct Car {
-        pub column: usize,
-    }
+        pub column: usize
+    };
 
     pub struct Scoreboard {
         pub score: usize,
@@ -69,7 +69,7 @@ fn main() {
         .add_system(play_explosion_sound.after(check_collisions))
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.9))
+                .with_run_criteria(FixedTimestep::step(1.0))
                 .with_system(spawn_enemy)
                 .with_system(increment_scoreboard),
         )
@@ -172,19 +172,17 @@ fn move_enemy(mut commands: Commands, mut query: Query<(Entity, &mut Transform),
 
 fn move_player(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Car, &mut Transform), With<Player>>,
+    mut query: Query<&mut Transform, With<Player>>,
 ) {
-    let (mut car, mut player_transform) = query.single_mut();
+    let mut player_transform = query.single_mut();
     let mut direction = 0.0;
 
-    if keyboard_input.just_pressed(KeyCode::Left) && car.column > 0 {
+    if keyboard_input.just_pressed(KeyCode::Left) {
         direction -= COLUMN_SIZE;
-        car.column -= 1;
     }
 
-    if keyboard_input.just_pressed(KeyCode::Right) && car.column < 2 {
+    if keyboard_input.just_pressed(KeyCode::Right) {
         direction += COLUMN_SIZE;
-        car.column += 1;
     }
 
     player_transform.translation.x += direction;
@@ -199,7 +197,7 @@ fn check_collisions(
 ) {
     let player_transform = player_query.single();
     let top_bound = -360.0 + TILE_SIZE * 4.0;
-    let bottom_bound = -360.0 - TILE_SIZE * 4.0 + HALF_TILE;
+    let bottom_bound = -360.0 - TILE_SIZE * 4.0;
 
     for (_, enemy_transform) in &enemies_query {
         let enemy_y = enemy_transform.translation.y;
@@ -212,7 +210,7 @@ fn check_collisions(
             collision_events.send_default();
 
             for (entity, _) in &enemies_query {
-                commands.entity(entity).despawn_recursive();
+                commands.entity(entity).despawn();
             }
 
             scoreboard.highscore = scoreboard.score;
