@@ -7,8 +7,8 @@ Avoid the Cars (red rectangles) coming.
 Use Left and Right arrow keys to move the Player (blue rectangle).
 
 
-### Screenshot of current state
-![Screenshot](screenshot.png)
+###  Current gameplay gif
+![Screenshot](screenshot.gif)
 
 
 ### Run Locally
