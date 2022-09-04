@@ -3,8 +3,8 @@
 
 
 ### How to play
-Avoid the Cars (red rectangles) coming. 
-Use Left and Right arrow keys to move the Player (blue rectangle).
+I assume everyone has seen this before. Anyway, just avoid the cars coming towards yours. 
+Use Left and Right arrow keys to move your Car
 
 
 ###  Current gameplay gif
