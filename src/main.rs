@@ -4,6 +4,9 @@ mod prelude {
     pub use bevy::{prelude::*, time::FixedTimestep};
     pub use rand::prelude::*;
 
+    pub const BG_COLOR: &str = "8d9e7b";
+    pub const FONT_SIZE: f32 = 30.0;
+
     pub const TOP_PADDING: f32 = 100.;
     pub const UI_WIDTH: f32 = 260.;
     pub const TILE_SIZE: f32 = 40.0;
@@ -37,9 +40,17 @@ mod prelude {
         pub column: usize,
     }
 
+    #[derive(Default)]
+    pub struct ScoreEntities {
+        pub score: Option<Entity>,
+        pub highscore: Option<Entity>,
+    }
+
+    #[derive(Default)]
     pub struct Scoreboard {
         pub score: usize,
         pub highscore: usize,
+        pub entities: ScoreEntities,
     }
 
     pub use crate::spawner::*;
@@ -56,11 +67,8 @@ fn main() {
             height: WINDOW_HEIGHT,
             ..default()
         })
-        .insert_resource(Scoreboard {
-            score: 0,
-            highscore: 0,
-        })
-        .insert_resource(ClearColor(Color::hex("8d9e7b").unwrap()))
+        .init_resource::<Scoreboard>()
+        .insert_resource(ClearColor(Color::hex(BG_COLOR).unwrap()))
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_startup_system(spawn_player)
@@ -101,7 +109,12 @@ struct CollisionEvent;
 #[derive(Default)]
 struct Explosion(Handle<AudioSource>);
 
-fn setup(mut commands: Commands, mut windows: ResMut<Windows>, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands,
+    mut windows: ResMut<Windows>,
+    asset_server: Res<AssetServer>,
+    mut score_resource: ResMut<Scoreboard>,
+) {
     let window = windows.primary_mut();
     window.center_window(MonitorSelection::Current);
     commands.spawn_bundle(Camera2dBundle::default());
@@ -109,31 +122,53 @@ fn setup(mut commands: Commands, mut windows: ResMut<Windows>, asset_server: Res
     let explosion_sound = asset_server.load("sounds/explosion.ogg");
     commands.insert_resource(Explosion(explosion_sound));
 
-    commands.spawn_bundle(
-        TextBundle::from_sections([
-            TextSection::new(
-                "Score: ",
-                TextStyle {
-                    font: asset_server.load("fonts/Terminess-Mono.ttf"),
-                    font_size: 40.0,
-                    color: Color::BLACK,
-                },
-            ),
-            TextSection::from_style(TextStyle {
-                font: asset_server.load("fonts/Terminess-Mono.ttf"),
-                font_size: 40.0,
-                color: Color::BLACK,
-            }),
-        ])
-        .with_style(Style {
-            position_type: PositionType::Absolute,
-            position: UiRect {
-                top: Val::Px(100.),
-                right: Val::Px(20.),
-                ..default()
-            },
-            ..default()
-        }),
+    let text_style = TextStyle {
+        font: asset_server.load("fonts/Terminess-Mono.ttf"),
+        font_size: FONT_SIZE,
+        color: Color::BLACK,
+    };
+    score_resource.entities.score = Some(
+        commands
+            .spawn_bundle(
+                TextBundle::from_sections([
+                    TextSection::new("Score: ", text_style.clone()),
+                    TextSection::from_style(text_style.clone()),
+                ])
+                .with_style(Style {
+                    position_type: PositionType::Absolute,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    position: UiRect {
+                        top: Val::Px(100.),
+                        right: Val::Px(20.),
+                        ..default()
+                    },
+                    ..default()
+                }),
+            )
+            .id(),
+    );
+
+    score_resource.entities.highscore = Some(
+        commands
+            .spawn_bundle(
+                TextBundle::from_sections([
+                    TextSection::new("High Score: ", text_style.clone()),
+                    TextSection::from_style(text_style),
+                ])
+                .with_style(Style {
+                    position_type: PositionType::Absolute,
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    position: UiRect {
+                        top: Val::Px(140.),
+                        right: Val::Px(20.),
+                        ..default()
+                    },
+                    ..default()
+                }),
+            )
+            .id(),
     );
 
     for x in 0..SCREEN_WIDTH {
@@ -239,9 +274,18 @@ fn check_collisions(
     }
 }
 
-fn update_scoreboard(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
-    let mut text = query.single_mut();
-    text.sections[1].value = scoreboard.score.to_string();
+fn update_scoreboard(score_resource: Res<Scoreboard>, mut score_query: Query<&mut Text>) {
+    score_query
+        .get_mut(score_resource.entities.score.unwrap())
+        .unwrap()
+        .sections[1]
+        .value = score_resource.score.to_string();
+
+    score_query
+        .get_mut(score_resource.entities.highscore.unwrap())
+        .unwrap()
+        .sections[1]
+        .value = score_resource.highscore.to_string();
 }
 
 fn increment_scoreboard(mut scoreboard: ResMut<Scoreboard>) {

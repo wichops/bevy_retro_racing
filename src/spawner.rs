@@ -93,8 +93,6 @@ pub fn spawn_enemy(mut commands: Commands) {
                     let pos_x = x as f32 * TILE_SIZE - TILE_SIZE;
                     let pos_y = y as f32 * -TILE_SIZE + TILE_SIZE + HALF_TILE;
 
-                    // let pos_y = y as f32 * TILE_SIZE - TILE_SIZE - HALF_TILE;
-
                     if c == 'O' {
                         parent.spawn_bundle(SpriteBundle {
                             sprite: sprite.clone(),
