@@ -5,7 +5,10 @@ mod prelude {
     pub use rand::prelude::*;
 
     pub const BG_COLOR: &str = "8d9e7b";
-    pub const FONT_SIZE: f32 = 30.0;
+    pub const FONT_SIZE: f32 = 36.0;
+
+    pub const PLAYER_Y: f32 = SCREEN_Y + (HALF_TILE * 4.);
+    pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
     pub const TOP_PADDING: f32 = 100.;
     pub const UI_WIDTH: f32 = 260.;
@@ -127,24 +130,28 @@ fn setup(
         font_size: FONT_SIZE,
         color: Color::BLACK,
     };
+
+    let text_alignment = TextAlignment::CENTER_RIGHT;
+
     score_resource.entities.score = Some(
         commands
             .spawn_bundle(
                 TextBundle::from_sections([
-                    TextSection::new("Score: ", text_style.clone()),
+                    TextSection::new("SCORE\n", text_style.clone()),
                     TextSection::from_style(text_style.clone()),
                 ])
                 .with_style(Style {
                     position_type: PositionType::Absolute,
                     display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::FlexEnd,
                     position: UiRect {
                         top: Val::Px(100.),
                         right: Val::Px(20.),
                         ..default()
                     },
                     ..default()
-                }),
+                })
+                .with_text_alignment(text_alignment),
             )
             .id(),
     );
@@ -153,20 +160,21 @@ fn setup(
         commands
             .spawn_bundle(
                 TextBundle::from_sections([
-                    TextSection::new("High Score: ", text_style.clone()),
+                    TextSection::new("HISCORE\n", text_style.clone()),
                     TextSection::from_style(text_style),
                 ])
                 .with_style(Style {
                     position_type: PositionType::Absolute,
                     display: Display::Flex,
-                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::FlexEnd,
                     position: UiRect {
-                        top: Val::Px(140.),
+                        top: Val::Px(180.),
                         right: Val::Px(20.),
                         ..default()
                     },
                     ..default()
-                }),
+                })
+                .with_text_alignment(text_alignment),
             )
             .id(),
     );
@@ -251,8 +259,8 @@ fn check_collisions(
     mut collision_events: EventWriter<CollisionEvent>,
 ) {
     let player_transform = player_query.single();
-    let top_bound = -360.0 + TILE_SIZE * 4.0;
-    let bottom_bound = -360.0 - TILE_SIZE * 4.0 - HALF_TILE;
+    let top_bound = PLAYER_Y + TILE_SIZE * 4.0;
+    let bottom_bound = PLAYER_Y - TILE_SIZE * 4.0 - HALF_TILE;
 
     for (_, enemy_transform) in &enemies_query {
         let enemy_y = enemy_transform.translation.y;

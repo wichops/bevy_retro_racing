@@ -34,7 +34,7 @@ pub fn spawn_walls(mut commands: Commands) {
         .with_children(|parent| {
             let sprite = Sprite {
                 custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                color: Color::rgb(0.0, 0.0, 0.0),
+                color: TILE_COLOR,
                 ..default()
             };
             let scale = Vec3::new(0.8, 0.8, 0.0);
@@ -83,7 +83,7 @@ pub fn spawn_enemy(mut commands: Commands) {
         .with_children(|parent| {
             let sprite = Sprite {
                 custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                color: Color::rgb(0.0, 0.0, 0.0),
+                color: TILE_COLOR,
                 ..default()
             };
             let scale = Vec3::new(0.8, 0.8, 0.0);
@@ -113,7 +113,6 @@ pub fn spawn_enemy(mut commands: Commands) {
 pub fn spawn_player(mut commands: Commands) {
     let column = 1;
     let (pos_x, _) = position_in_screen(column);
-    let pos_y = SCREEN_Y + (HALF_TILE * 4.);
 
     commands
         .spawn()
@@ -122,7 +121,7 @@ pub fn spawn_player(mut commands: Commands) {
         .with_children(|parent| {
             let sprite = Sprite {
                 custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                color: Color::rgb(0.0, 0.0, 0.0),
+                color: TILE_COLOR,
                 ..default()
             };
             let scale = Vec3::new(0.8, 0.8, 0.0);
@@ -146,5 +145,5 @@ pub fn spawn_player(mut commands: Commands) {
                 }
             }
         })
-        .insert_bundle(anchor_sprite(Vec3::new(pos_x, pos_y, 0.0)));
+        .insert_bundle(anchor_sprite(Vec3::new(pos_x, PLAYER_Y, 0.0)));
 }
