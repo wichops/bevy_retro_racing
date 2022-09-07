@@ -37,10 +37,10 @@ pub fn spawn_walls(mut commands: Commands) {
                 color: TILE_COLOR,
                 ..default()
             };
-            let scale = Vec3::new(0.8, 0.8, 0.0);
+            let scale = Vec3::new(0.75, 0.75, 0.0);
 
             for y in 0..3 {
-                let pos_y = y as f32 * TILE_SIZE - TILE_SIZE;
+                let pos_y = y as f32 * TILE_SIZE - HALF_TILE;
 
                 parent.spawn_bundle(SpriteBundle {
                     sprite: sprite.clone(),
@@ -86,7 +86,7 @@ pub fn spawn_enemy(mut commands: Commands) {
                 color: TILE_COLOR,
                 ..default()
             };
-            let scale = Vec3::new(0.8, 0.8, 0.0);
+            let scale = Vec3::new(0.75, 0.75, 0.0);
 
             for (y, line) in ENEMY_CAR.iter().enumerate() {
                 for (x, c) in line.chars().enumerate() {
@@ -124,7 +124,7 @@ pub fn spawn_player(mut commands: Commands) {
                 color: TILE_COLOR,
                 ..default()
             };
-            let scale = Vec3::new(0.8, 0.8, 0.0);
+            let scale = Vec3::new(0.75, 0.75, 0.0);
 
             for (y, line) in CAR.iter().enumerate() {
                 for (x, c) in line.chars().enumerate() {

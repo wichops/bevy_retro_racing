@@ -11,9 +11,8 @@ mod prelude {
     pub const PLAYER_Y: f32 = SCREEN_Y + (HALF_TILE * 4.);
     pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
-    pub const TOP_PADDING: f32 = 100.;
     pub const UI_WIDTH: f32 = 260.;
-    pub const TILE_SIZE: f32 = 40.0;
+    pub const TILE_SIZE: f32 = 32.0;
     pub const HALF_TILE: f32 = TILE_SIZE / 2.;
     pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.;
 
@@ -24,7 +23,7 @@ mod prelude {
     pub const SCREEN_HEIGHT: usize = 20;
 
     pub const WINDOW_PADDING: f32 = 20.0;
-    pub const WINDOW_HEIGHT: f32 = TOP_PADDING + SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING;
+    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING * 2.0;
     pub const WINDOW_WIDTH: f32 = UI_WIDTH + SCREEN_WIDTH as f32 * TILE_SIZE + WINDOW_PADDING;
 
     pub const SCREEN_X: f32 = WINDOW_WIDTH as f32 / -2. + WINDOW_PADDING;
@@ -103,9 +102,7 @@ fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
                     right: Val::Px((UI_WIDTH - WINDOW_PADDING) / 2.0),
                     ..default()
                 },
-                // horizontally center child text
                 justify_content: JustifyContent::Center,
-                // vertically center child text
                 align_items: AlignItems::Center,
                 ..default()
             },
@@ -182,7 +179,7 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.5).chain(run_if_playing))
+                .with_run_criteria(FixedTimestep::step(0.4).chain(run_if_playing))
                 .with_system(spawn_walls),
         )
         .add_system_set(
@@ -192,7 +189,7 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.8).chain(run_if_playing))
+                .with_run_criteria(FixedTimestep::step(0.72).chain(run_if_playing))
                 .with_system(spawn_enemy),
         )
         .add_system_set(
@@ -244,7 +241,7 @@ fn setup(
                     display: Display::Flex,
                     justify_content: JustifyContent::FlexEnd,
                     position: UiRect {
-                        top: Val::Px(100.),
+                        top: Val::Px(60.),
                         right: Val::Px(20.),
                         ..default()
                     },
@@ -267,7 +264,7 @@ fn setup(
                     display: Display::Flex,
                     justify_content: JustifyContent::FlexEnd,
                     position: UiRect {
-                        top: Val::Px(180.),
+                        top: Val::Px(140.),
                         right: Val::Px(20.),
                         ..default()
                     },
