@@ -6,12 +6,12 @@ mod prelude {
     pub use rand::prelude::*;
 
     pub const BG_COLOR: &str = "8d9e7b";
-    pub const FONT_SIZE: f32 = 36.0;
+    pub const FONT_SIZE: f32 = 48.0;
 
     pub const PLAYER_Y: f32 = SCREEN_Y + (HALF_TILE * 4.);
     pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
-    pub const UI_WIDTH: f32 = 260.;
+    pub const UI_WIDTH: f32 = 240.;
     pub const TILE_SIZE: f32 = 32.0;
     pub const HALF_TILE: f32 = TILE_SIZE / 2.;
     pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.;
@@ -172,9 +172,7 @@ fn main() {
         .add_system_set(
             SystemSet::on_enter(GameState::Playing)
                 .with_system(play_motor_sound)
-                .with_system(spawn_player)
-                .with_system(spawn_enemy)
-                .with_system(spawn_walls),
+                .with_system(spawn_player),
         )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
@@ -277,7 +275,7 @@ fn setup(
                     display: Display::Flex,
                     justify_content: JustifyContent::FlexEnd,
                     position: UiRect {
-                        top: Val::Px(140.),
+                        top: Val::Px(160.),
                         right: Val::Px(20.),
                         ..default()
                     },

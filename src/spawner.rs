@@ -1,7 +1,6 @@
 use crate::prelude::*;
 
 const CAR: [&str; 4] = ["_O_", "OOO", "_O_", "O_O"];
-const ENEMY_CAR: [&str; 4] = ["O_O", "_O_", "OOO", "_O_"];
 
 const LEFT_WALL_X: f32 = SCREEN_X + HALF_TILE;
 const RIGHT_WALL_X: f32 = SCREEN_X + SCREEN_WIDTH as f32 * TILE_SIZE - HALF_TILE;
@@ -88,7 +87,7 @@ pub fn spawn_enemy(mut commands: Commands) {
             };
             let scale = Vec3::new(0.75, 0.75, 0.0);
 
-            for (y, line) in ENEMY_CAR.iter().enumerate() {
+            for (y, line) in CAR.iter().enumerate() {
                 for (x, c) in line.chars().enumerate() {
                     let pos_x = x as f32 * TILE_SIZE - TILE_SIZE;
                     let pos_y = y as f32 * -TILE_SIZE + TILE_SIZE + HALF_TILE;
