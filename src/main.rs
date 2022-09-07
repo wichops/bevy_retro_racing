@@ -1,7 +1,8 @@
 mod spawner;
 
 mod prelude {
-    pub use bevy::{prelude::*, time::FixedTimestep};
+    pub use bevy::{ecs::schedule::ShouldRun, prelude::*, time::FixedTimestep};
+
     pub use rand::prelude::*;
 
     pub const BG_COLOR: &str = "8d9e7b";
@@ -56,10 +57,101 @@ mod prelude {
         pub entities: ScoreEntities,
     }
 
+    #[derive(Debug, Clone, Eq, PartialEq, Hash)]
+    pub enum GameState {
+        Menu,
+        Playing,
+    }
+
+    pub struct MenuData {
+        pub button_entity: Entity,
+    }
+
     pub use crate::spawner::*;
 }
 
 use prelude::*;
+use std::cmp;
+
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
+
+/*
+ * This is necessary because using with_run_criteria multiple times
+ * overrides the existing SystemSet
+ *
+ * The fix was found in this thread:
+ * https://github.com/bevyengine/bevy/issues/1839#issuecomment-835807108
+*/
+fn run_if_playing(In(input): In<ShouldRun>, state: Res<State<GameState>>) -> ShouldRun {
+    if *state.current() == GameState::Playing {
+        input
+    } else {
+        ShouldRun::No
+    }
+}
+
+fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let button_entity = commands
+        .spawn_bundle(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                // center button
+                margin: UiRect::all(Val::Auto),
+                position: UiRect {
+                    right: Val::Px((UI_WIDTH - WINDOW_PADDING) / 2.0),
+                    ..default()
+                },
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            color: NORMAL_BUTTON.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle::from_section(
+                "Play",
+                TextStyle {
+                    font: asset_server.load("fonts/Terminess-Mono.ttf"),
+                    font_size: 40.0,
+                    color: Color::rgb(0.9, 0.9, 0.9),
+                },
+            ));
+        })
+        .id();
+    commands.insert_resource(MenuData { button_entity });
+}
+
+fn menu(
+    mut state: ResMut<State<GameState>>,
+    mut interaction_query: Query<
+        (&Interaction, &mut UiColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, mut color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Clicked => {
+                *color = PRESSED_BUTTON.into();
+                state.set(GameState::Playing).unwrap();
+            }
+            Interaction::Hovered => {
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
+}
+
+fn cleanup_menu(mut commands: Commands, menu_data: Res<MenuData>) {
+    commands.entity(menu_data.button_entity).despawn_recursive();
+}
 
 fn main() {
     App::new()
@@ -73,17 +165,24 @@ fn main() {
         .init_resource::<Scoreboard>()
         .insert_resource(ClearColor(Color::hex(BG_COLOR).unwrap()))
         .add_plugins(DefaultPlugins)
+        .add_state(GameState::Menu)
         .add_startup_system(setup)
         .add_startup_system(spawn_player)
         .add_startup_system(spawn_enemy)
         .add_startup_system(spawn_walls)
         .add_event::<CollisionEvent>()
-        .add_system(update_scoreboard)
-        .add_system(move_player.before(check_collisions))
-        .add_system(play_explosion_sound.after(check_collisions))
+        .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_menu))
+        .add_system_set(SystemSet::on_update(GameState::Menu).with_system(menu))
+        .add_system_set(SystemSet::on_exit(GameState::Menu).with_system(cleanup_menu))
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.5))
+                .with_system(update_scoreboard)
+                .with_system(move_player.before(check_collisions))
+                .with_system(play_explosion_sound.after(check_collisions)),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(0.5).chain(run_if_playing))
                 .with_system(spawn_walls),
         )
         .add_system_set(
@@ -93,12 +192,12 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.8))
+                .with_run_criteria(FixedTimestep::step(0.8).chain(run_if_playing))
                 .with_system(spawn_enemy),
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.08))
+                .with_run_criteria(FixedTimestep::step(0.08).chain(run_if_playing))
                 .with_system(check_collisions)
                 .with_system(move_wall)
                 .with_system(move_enemy.before(check_collisions)),
@@ -234,7 +333,11 @@ fn move_wall(mut commands: Commands, mut query: Query<(Entity, &mut Transform), 
 fn move_player(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&mut Car, &mut Transform), With<Player>>,
+    state: Res<State<GameState>>,
 ) {
+    if *state.current() != GameState::Playing {
+        return;
+    }
     let (mut car, mut player_transform) = query.single_mut();
     let mut direction = 0.0;
 
@@ -276,13 +379,21 @@ fn check_collisions(
                 commands.entity(entity).despawn_recursive();
             }
 
-            scoreboard.highscore = scoreboard.score;
+            scoreboard.highscore = cmp::max(scoreboard.highscore, scoreboard.score);
             scoreboard.score = 0;
         }
     }
 }
 
-fn update_scoreboard(score_resource: Res<Scoreboard>, mut score_query: Query<&mut Text>) {
+fn update_scoreboard(
+    score_resource: Res<Scoreboard>,
+    mut score_query: Query<&mut Text>,
+    state: Res<State<GameState>>,
+) {
+    if *state.current() != GameState::Playing {
+        return;
+    }
+
     score_query
         .get_mut(score_resource.entities.score.unwrap())
         .unwrap()
@@ -296,6 +407,9 @@ fn update_scoreboard(score_resource: Res<Scoreboard>, mut score_query: Query<&mu
         .value = score_resource.highscore.to_string();
 }
 
-fn increment_scoreboard(mut scoreboard: ResMut<Scoreboard>) {
+fn increment_scoreboard(mut scoreboard: ResMut<Scoreboard>, state: Res<State<GameState>>) {
+    if *state.current() != GameState::Playing {
+        return;
+    }
     scoreboard.score += 100;
 }
