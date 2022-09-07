@@ -1,7 +1,7 @@
 mod spawner;
 
 mod prelude {
-    pub use bevy::{ecs::schedule::ShouldRun, prelude::*, time::FixedTimestep};
+    pub use bevy::{audio::AudioSink, ecs::schedule::ShouldRun, prelude::*, time::FixedTimestep};
 
     pub use rand::prelude::*;
 
@@ -69,6 +69,7 @@ mod prelude {
     pub use crate::spawner::*;
 }
 
+use bevy::audio::AudioSink;
 use prelude::*;
 use std::cmp;
 
@@ -113,7 +114,7 @@ fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
             parent.spawn_bundle(TextBundle::from_section(
                 "Play",
                 TextStyle {
-                    font: asset_server.load("fonts/Terminess-Mono.ttf"),
+                    font: asset_server.load("fonts/Calculator.ttf"),
                     font_size: 40.0,
                     color: Color::rgb(0.9, 0.9, 0.9),
                 },
@@ -164,15 +165,19 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_state(GameState::Menu)
         .add_startup_system(setup)
-        .add_startup_system(spawn_player)
-        .add_startup_system(spawn_enemy)
-        .add_startup_system(spawn_walls)
         .add_event::<CollisionEvent>()
         .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_menu))
         .add_system_set(SystemSet::on_update(GameState::Menu).with_system(menu))
         .add_system_set(SystemSet::on_exit(GameState::Menu).with_system(cleanup_menu))
         .add_system_set(
-            SystemSet::new()
+            SystemSet::on_enter(GameState::Playing)
+                .with_system(play_motor_sound)
+                .with_system(spawn_player)
+                .with_system(spawn_enemy)
+                .with_system(spawn_walls),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::Playing)
                 .with_system(update_scoreboard)
                 .with_system(move_player.before(check_collisions))
                 .with_system(play_explosion_sound.after(check_collisions)),
@@ -208,6 +213,11 @@ struct CollisionEvent;
 #[derive(Default)]
 struct Explosion(Handle<AudioSource>);
 
+#[derive(Default)]
+struct MotorSound(Handle<AudioSource>);
+
+struct MotorController(Handle<AudioSink>);
+
 fn setup(
     mut commands: Commands,
     mut windows: ResMut<Windows>,
@@ -221,8 +231,11 @@ fn setup(
     let explosion_sound = asset_server.load("sounds/explosion.ogg");
     commands.insert_resource(Explosion(explosion_sound));
 
+    let motor_sound = asset_server.load("sounds/motor.ogg");
+    commands.insert_resource(MotorSound(motor_sound));
+
     let text_style = TextStyle {
-        font: asset_server.load("fonts/Terminess-Mono.ttf"),
+        font: asset_server.load("fonts/Calculator.ttf"),
         font_size: FONT_SIZE,
         color: Color::BLACK,
     };
@@ -296,6 +309,19 @@ fn setup(
             });
         }
     }
+}
+
+fn play_motor_sound(
+    mut commands: Commands,
+    sound: Res<MotorSound>,
+    audio: Res<Audio>,
+    audio_sinks: Res<Assets<AudioSink>>,
+) {
+    let handle = audio_sinks.get_handle(
+        audio.play_with_settings(sound.0.clone(), PlaybackSettings::LOOP.with_volume(0.9)),
+    );
+
+    commands.insert_resource(MotorController(handle));
 }
 
 fn play_explosion_sound(
