@@ -185,7 +185,16 @@ pub fn play_explosion_sound(
     }
 }
 
-pub fn accelerate(mut commands: Commands, mut query: Query<(Entity, &mut Transform), With<MoveY>>) {
+pub fn accelerate(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Transform), With<MoveY>>,
+    timer: Res<Time>,
+    mut game_timer: ResMut<GameTimer>,
+) {
+    if !game_timer.move_timer.tick(timer.delta()).just_finished() {
+        return;
+    }
+
     for (entity, mut entity_transform) in query.iter_mut() {
         entity_transform.translation.y -= TILE_SIZE;
         if entity_transform.translation.y < SCREEN_Y * 2.0 {
@@ -205,12 +214,12 @@ pub fn move_player(
     let (mut car, mut player_transform) = query.single_mut();
     let mut direction = 0.0;
 
-    if keyboard_input.just_pressed(KeyCode::Left) && car.column > 0 {
+    if keyboard_input.any_just_pressed([KeyCode::Left, KeyCode::A]) && car.column > 0 {
         direction -= COLUMN_SIZE;
         car.column -= 1;
     }
 
-    if keyboard_input.just_pressed(KeyCode::Right) && car.column < 2 {
+    if keyboard_input.any_just_pressed([KeyCode::Right, KeyCode::D]) && car.column < 2 {
         direction += COLUMN_SIZE;
         car.column += 1;
     }

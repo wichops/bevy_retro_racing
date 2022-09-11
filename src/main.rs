@@ -55,6 +55,24 @@ mod prelude {
         pub button_entity: Entity,
     }
 
+    pub struct GameTimer {
+        pub move_timer: Timer,
+    }
+
+    impl GameTimer {
+        pub fn new() -> Self {
+            Self {
+                move_timer: Timer::from_seconds(0.08, true),
+            }
+        }
+    }
+
+    impl Default for GameTimer {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     pub use crate::entities::*;
     pub use crate::spawner::*;
     pub use crate::systems::*;
@@ -72,6 +90,7 @@ fn main() {
             ..default()
         })
         .init_resource::<Scoreboard>()
+        .init_resource::<GameTimer>()
         .insert_resource(ClearColor(Color::hex(BG_COLOR).unwrap()))
         .add_plugins(DefaultPlugins)
         .add_state(GameState::Menu)
@@ -87,7 +106,9 @@ fn main() {
         )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
+                .with_system(check_collisions)
                 .with_system(update_scoreboard)
+                .with_system(accelerate.before(check_collisions))
                 .with_system(move_player.before(check_collisions))
                 .with_system(play_explosion_sound.after(check_collisions)),
         )
@@ -105,12 +126,6 @@ fn main() {
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(0.72).chain(run_if_playing))
                 .with_system(spawn_enemy),
-        )
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.08).chain(run_if_playing))
-                .with_system(check_collisions)
-                .with_system(accelerate.before(check_collisions)),
         )
         .run();
 }
