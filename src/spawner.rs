@@ -49,15 +49,15 @@ fn draw_car(parent: &mut ChildBuilder) {
 
 fn position_in_screen(column: usize) -> (f32, f32) {
     let pos_x = SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
-    let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * 8.0;
+    let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * CAR_SPACING;
 
     (pos_x, pos_y)
 }
 
 pub fn spawn_walls(mut commands: Commands, asset_server: Res<AssetServer>) {
-    for y in 0..7 {
+    for y in 0..6 {
         let pos_y = SCREEN_Y as f32 + TILE_SIZE;
-        let y_distance = y as f32 * TILE_SIZE * 5.0;
+        let y_distance = y as f32 * TILE_SIZE * WALL_SPACING;
 
         commands
             .spawn()
@@ -122,7 +122,7 @@ pub fn spawn_enemies(mut commands: Commands /* asset_server: Res<AssetServer> */
     for y in 0..4 {
         let column = rng.gen_range(0..3);
         let (pos_x, pos_y) = position_in_screen(column);
-        let y_distance = y as f32 * TILE_SIZE * 9.0;
+        let y_distance = y as f32 * TILE_SIZE * CAR_SPACING;
 
         commands
             .spawn()

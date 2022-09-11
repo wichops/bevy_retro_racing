@@ -185,8 +185,32 @@ pub fn play_explosion_sound(
     }
 }
 
+pub fn enemy_respawn(mut enemies_query: Query<&mut Transform, With<Enemy>>) {
+    for mut enemy_transform in enemies_query.iter_mut() {
+        if enemy_transform.translation.y < PLAYER_Y - TILE_SIZE * (CAR_SPACING - 1.0) {
+            let mut rng = thread_rng();
+            let column = rng.gen_range(0..3);
+
+            let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * CAR_SPACING;
+            enemy_transform.translation.y = pos_y;
+
+            let pos_x =
+                SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
+            enemy_transform.translation.x = pos_x;
+        }
+    }
+}
+
+pub fn wall_respawn(mut walls_query: Query<&mut Transform, With<Wall>>) {
+    for mut wall_transform in walls_query.iter_mut() {
+        if wall_transform.translation.y < PLAYER_Y - TILE_SIZE * (WALL_SPACING + 1.0) {
+            let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * WALL_SPACING;
+            wall_transform.translation.y = pos_y;
+        }
+    }
+}
 pub fn accelerate(
-    mut query: Query<(Entity, &mut Transform), With<MoveY>>,
+    mut query: Query<&mut Transform, With<MoveY>>,
     timer: Res<Time>,
     mut game_timer: ResMut<GameData>,
 ) {
@@ -194,19 +218,8 @@ pub fn accelerate(
         return;
     }
 
-    for (_, mut entity_transform) in query.iter_mut() {
+    for mut entity_transform in query.iter_mut() {
         entity_transform.translation.y -= TILE_SIZE;
-        if entity_transform.translation.y < PLAYER_Y - TILE_SIZE * 8.0 {
-            let mut rng = thread_rng();
-            let column = rng.gen_range(0..3);
-
-            let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * 9.0;
-            entity_transform.translation.y = pos_y;
-
-            // let pos_x =
-            //     SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
-            // entity_transform.translation.x = pos_x;
-        }
     }
 }
 

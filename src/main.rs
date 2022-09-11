@@ -3,7 +3,7 @@ mod spawner;
 mod systems;
 
 mod prelude {
-    pub use bevy::{audio::AudioSink, ecs::schedule::ShouldRun, prelude::*, time::FixedTimestep};
+    pub use bevy::{audio::AudioSink, prelude::*, time::FixedTimestep};
     pub use rand::prelude::*;
 
     pub const BG_COLOR: &str = "8d9e7b";
@@ -13,6 +13,8 @@ mod prelude {
     pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
     pub const UI_WIDTH: f32 = 240.0;
+    pub const WALL_SPACING: f32 = 5.0;
+    pub const CAR_SPACING: f32 = 9.0;
     pub const TILE_SIZE: f32 = 32.0;
     pub const HALF_TILE: f32 = TILE_SIZE / 2.;
     pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.;
@@ -116,11 +118,13 @@ fn main() {
         )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
-                .with_system(check_collisions)
-                .with_system(update_scoreboard)
                 .with_system(accelerate.before(check_collisions))
                 .with_system(move_player.before(check_collisions))
-                .with_system(play_explosion_sound.after(check_collisions)),
+                .with_system(play_explosion_sound.after(check_collisions))
+                .with_system(wall_respawn)
+                .with_system(enemy_respawn)
+                .with_system(check_collisions)
+                .with_system(update_scoreboard),
         )
         .add_system_set(
             SystemSet::new()
@@ -128,19 +132,4 @@ fn main() {
                 .with_system(increment_scoreboard),
         )
         .run();
-}
-
-/*
- * This is necessary because using with_run_criteria multiple times
- * overrides the existing SystemSet
- *
- * The fix was found in this thread:
- * https://github.com/bevyengine/bevy/issues/1839#issuecomment-835807108
-*/
-fn run_if_playing(In(input): In<ShouldRun>, state: Res<State<GameState>>) -> ShouldRun {
-    if *state.current() == GameState::Playing {
-        input
-    } else {
-        ShouldRun::No
-    }
 }
