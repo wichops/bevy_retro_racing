@@ -7,7 +7,7 @@ pub struct ExplosionSound(Handle<AudioSource>);
 #[derive(Default)]
 pub struct MotorSound(Handle<AudioSource>);
 
-struct MotorController(Handle<AudioSink>);
+pub struct MotorController(Handle<AudioSink>);
 
 pub fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
     let button_entity = commands
@@ -97,7 +97,7 @@ pub fn setup(
             .spawn_bundle(
                 TextBundle::from_sections([
                     TextSection::new("SCORE\n", text_style.clone()),
-                    TextSection::from_style(text_style.clone()),
+                    TextSection::new(score_resource.score.to_string(), text_style.clone()),
                 ])
                 .with_style(Style {
                     position_type: PositionType::Absolute,
@@ -120,7 +120,7 @@ pub fn setup(
             .spawn_bundle(
                 TextBundle::from_sections([
                     TextSection::new("HISCORE\n", text_style.clone()),
-                    TextSection::from_style(text_style),
+                    TextSection::new(score_resource.highscore.to_string(), text_style),
                 ])
                 .with_style(Style {
                     position_type: PositionType::Absolute,
@@ -186,19 +186,26 @@ pub fn play_explosion_sound(
 }
 
 pub fn accelerate(
-    mut commands: Commands,
     mut query: Query<(Entity, &mut Transform), With<MoveY>>,
     timer: Res<Time>,
-    mut game_timer: ResMut<GameTimer>,
+    mut game_timer: ResMut<GameData>,
 ) {
     if !game_timer.move_timer.tick(timer.delta()).just_finished() {
         return;
     }
 
-    for (entity, mut entity_transform) in query.iter_mut() {
+    for (_, mut entity_transform) in query.iter_mut() {
         entity_transform.translation.y -= TILE_SIZE;
-        if entity_transform.translation.y < SCREEN_Y * 2.0 {
-            commands.entity(entity).despawn_recursive();
+        if entity_transform.translation.y < PLAYER_Y - TILE_SIZE * 8.0 {
+            let mut rng = thread_rng();
+            let column = rng.gen_range(0..3);
+
+            let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * 9.0;
+            entity_transform.translation.y = pos_y;
+
+            // let pos_x =
+            //     SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
+            // entity_transform.translation.x = pos_x;
         }
     }
 }
@@ -229,12 +236,16 @@ pub fn move_player(
 
 pub fn check_collisions(
     mut commands: Commands,
-    player_query: Query<&Transform, With<Player>>,
+    player_query: Query<(Entity, &Transform), With<Player>>,
     enemies_query: Query<(Entity, &Transform), With<Enemy>>,
+    walls_query: Query<(Entity, &Transform), With<Wall>>,
     mut scoreboard: ResMut<Scoreboard>,
     mut collision_events: EventWriter<CollisionEvent>,
+    mut state: ResMut<State<GameState>>,
+    audio_sinks: Res<Assets<AudioSink>>,
+    motor_controller: Res<MotorController>,
 ) {
-    let player_transform = player_query.single();
+    let (player_entity, player_transform) = player_query.single();
     let top_bound = PLAYER_Y + TILE_SIZE * 4.0;
     let bottom_bound = PLAYER_Y - TILE_SIZE * 4.0 - HALF_TILE;
 
@@ -248,25 +259,30 @@ pub fn check_collisions(
         {
             collision_events.send_default();
 
+            for (entity, _) in &walls_query {
+                commands.entity(entity).despawn_recursive();
+            }
+
             for (entity, _) in &enemies_query {
                 commands.entity(entity).despawn_recursive();
             }
 
+            commands.entity(player_entity).despawn_recursive();
+
             scoreboard.highscore = cmp::max(scoreboard.highscore, scoreboard.score);
             scoreboard.score = 0;
+
+            if let Some(sink) = audio_sinks.get(&motor_controller.0) {
+                sink.pause();
+                commands.remove_resource::<MotorController>();
+            }
+
+            state.set(GameState::Menu).unwrap();
         }
     }
 }
 
-pub fn update_scoreboard(
-    score_resource: Res<Scoreboard>,
-    mut score_query: Query<&mut Text>,
-    state: Res<State<GameState>>,
-) {
-    if *state.current() != GameState::Playing {
-        return;
-    }
-
+pub fn update_scoreboard(score_resource: Res<Scoreboard>, mut score_query: Query<&mut Text>) {
     score_query
         .get_mut(score_resource.entities.score.unwrap())
         .unwrap()

@@ -20,7 +20,7 @@ mod prelude {
     pub const PADDING: usize = 2;
 
     pub const WINDOW_PADDING: f32 = 20.0;
-    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING * 2.0;
+    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING * 8.0;
     pub const WINDOW_WIDTH: f32 = UI_WIDTH + SCREEN_WIDTH as f32 * TILE_SIZE + WINDOW_PADDING;
 
     pub const SCREEN_X: f32 = WINDOW_WIDTH as f32 / -2. + WINDOW_PADDING;
@@ -55,19 +55,23 @@ mod prelude {
         pub button_entity: Entity,
     }
 
-    pub struct GameTimer {
+    pub struct GameData {
         pub move_timer: Timer,
+        pub is_boosting: bool,
+        pub boost_factor: f32,
     }
 
-    impl GameTimer {
+    impl GameData {
         pub fn new() -> Self {
             Self {
                 move_timer: Timer::from_seconds(0.08, true),
+                is_boosting: false,
+                boost_factor: 1.1,
             }
         }
     }
 
-    impl Default for GameTimer {
+    impl Default for GameData {
         fn default() -> Self {
             Self::new()
         }
@@ -90,19 +94,25 @@ fn main() {
             ..default()
         })
         .init_resource::<Scoreboard>()
-        .init_resource::<GameTimer>()
+        .init_resource::<GameData>()
         .insert_resource(ClearColor(Color::hex(BG_COLOR).unwrap()))
         .add_plugins(DefaultPlugins)
         .add_state(GameState::Menu)
         .add_startup_system(setup)
         .add_event::<CollisionEvent>()
-        .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_menu))
+        .add_system_set(
+            SystemSet::on_enter(GameState::Menu)
+                .with_system(setup_menu)
+                .with_system(spawn_walls),
+        )
         .add_system_set(SystemSet::on_update(GameState::Menu).with_system(menu))
         .add_system_set(SystemSet::on_exit(GameState::Menu).with_system(cleanup_menu))
         .add_system_set(
             SystemSet::on_enter(GameState::Playing)
                 .with_system(play_motor_sound)
-                .with_system(spawn_player),
+                .with_system(spawn_player)
+                .with_system(spawn_walls)
+                .with_system(spawn_enemies),
         )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
@@ -114,18 +124,8 @@ fn main() {
         )
         .add_system_set(
             SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.4).chain(run_if_playing))
-                .with_system(spawn_walls),
-        )
-        .add_system_set(
-            SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
                 .with_system(increment_scoreboard),
-        )
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.72).chain(run_if_playing))
-                .with_system(spawn_enemy),
         )
         .run();
 }
