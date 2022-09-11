@@ -3,7 +3,7 @@ mod spawner;
 mod systems;
 
 mod prelude {
-    pub use bevy::{audio::AudioSink, ecs::schedule::ShouldRun, prelude::*, time::FixedTimestep};
+    pub use bevy::{audio::AudioSink, prelude::*, time::FixedTimestep};
     pub use rand::prelude::*;
 
     pub const BG_COLOR: &str = "8d9e7b";
@@ -13,6 +13,8 @@ mod prelude {
     pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
     pub const UI_WIDTH: f32 = 240.0;
+    pub const WALL_SPACING: f32 = 5.0;
+    pub const CAR_SPACING: f32 = 9.0;
     pub const TILE_SIZE: f32 = 32.0;
     pub const HALF_TILE: f32 = TILE_SIZE / 2.;
     pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.;
@@ -20,7 +22,7 @@ mod prelude {
     pub const PADDING: usize = 2;
 
     pub const WINDOW_PADDING: f32 = 20.0;
-    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING * 2.0;
+    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING * 8.0;
     pub const WINDOW_WIDTH: f32 = UI_WIDTH + SCREEN_WIDTH as f32 * TILE_SIZE + WINDOW_PADDING;
 
     pub const SCREEN_X: f32 = WINDOW_WIDTH as f32 / -2. + WINDOW_PADDING;
@@ -55,19 +57,23 @@ mod prelude {
         pub button_entity: Entity,
     }
 
-    pub struct GameTimer {
+    pub struct GameData {
         pub move_timer: Timer,
+        pub is_boosting: bool,
+        pub boost_factor: f32,
     }
 
-    impl GameTimer {
+    impl GameData {
         pub fn new() -> Self {
             Self {
                 move_timer: Timer::from_seconds(0.08, true),
+                is_boosting: false,
+                boost_factor: 1.1,
             }
         }
     }
 
-    impl Default for GameTimer {
+    impl Default for GameData {
         fn default() -> Self {
             Self::new()
         }
@@ -90,57 +96,40 @@ fn main() {
             ..default()
         })
         .init_resource::<Scoreboard>()
-        .init_resource::<GameTimer>()
+        .init_resource::<GameData>()
         .insert_resource(ClearColor(Color::hex(BG_COLOR).unwrap()))
         .add_plugins(DefaultPlugins)
         .add_state(GameState::Menu)
         .add_startup_system(setup)
         .add_event::<CollisionEvent>()
-        .add_system_set(SystemSet::on_enter(GameState::Menu).with_system(setup_menu))
+        .add_system_set(
+            SystemSet::on_enter(GameState::Menu)
+                .with_system(setup_menu)
+                .with_system(spawn_walls),
+        )
         .add_system_set(SystemSet::on_update(GameState::Menu).with_system(menu))
         .add_system_set(SystemSet::on_exit(GameState::Menu).with_system(cleanup_menu))
         .add_system_set(
             SystemSet::on_enter(GameState::Playing)
                 .with_system(play_motor_sound)
-                .with_system(spawn_player),
+                .with_system(spawn_player)
+                .with_system(spawn_walls)
+                .with_system(spawn_enemies),
         )
         .add_system_set(
             SystemSet::on_update(GameState::Playing)
-                .with_system(check_collisions)
-                .with_system(update_scoreboard)
                 .with_system(accelerate.before(check_collisions))
                 .with_system(move_player.before(check_collisions))
-                .with_system(play_explosion_sound.after(check_collisions)),
-        )
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.4).chain(run_if_playing))
-                .with_system(spawn_walls),
+                .with_system(play_explosion_sound.after(check_collisions))
+                .with_system(wall_respawn)
+                .with_system(enemy_respawn)
+                .with_system(check_collisions)
+                .with_system(update_scoreboard),
         )
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
                 .with_system(increment_scoreboard),
         )
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(FixedTimestep::step(0.72).chain(run_if_playing))
-                .with_system(spawn_enemy),
-        )
         .run();
-}
-
-/*
- * This is necessary because using with_run_criteria multiple times
- * overrides the existing SystemSet
- *
- * The fix was found in this thread:
- * https://github.com/bevyengine/bevy/issues/1839#issuecomment-835807108
-*/
-fn run_if_playing(In(input): In<ShouldRun>, state: Res<State<GameState>>) -> ShouldRun {
-    if *state.current() == GameState::Playing {
-        input
-    } else {
-        ShouldRun::No
-    }
 }
