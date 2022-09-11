@@ -54,7 +54,7 @@ fn position_in_screen(column: usize) -> (f32, f32) {
     (pos_x, pos_y)
 }
 
-pub fn spawn_walls(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn spawn_walls(mut commands: Commands) {
     for y in 0..6 {
         let pos_y = SCREEN_Y as f32 + TILE_SIZE;
         let y_distance = y as f32 * TILE_SIZE * WALL_SPACING;
@@ -96,23 +96,6 @@ pub fn spawn_walls(mut commands: Commands, asset_server: Res<AssetServer>) {
                 }
             })
             .insert_bundle(anchor_sprite(Vec3::new(0.0, pos_y + y_distance, 0.0)));
-        // [Debug] Show car numbers
-
-        let text_style = TextStyle {
-            font: asset_server.load("fonts/Calculator.ttf"),
-            font_size: 40.0,
-            color: Color::WHITE,
-        };
-        commands
-            .spawn_bundle(Text2dBundle {
-                text: Text::from_section(format!("{}", y), text_style.clone()),
-                transform: Transform {
-                    translation: Vec3::new(LEFT_WALL_X, pos_y + y_distance, 1.0),
-                    ..default()
-                },
-                ..default()
-            })
-            .insert(MoveY);
     }
 }
 

@@ -43,6 +43,7 @@ pub fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 pub fn menu(
     mut state: ResMut<State<GameState>>,
+    keyboard_input: Res<Input<KeyCode>>,
     mut interaction_query: Query<
         (&Interaction, &mut UiColor),
         (Changed<Interaction>, With<Button>),
@@ -61,6 +62,10 @@ pub fn menu(
                 *color = NORMAL_BUTTON.into();
             }
         }
+    }
+
+    if keyboard_input.just_pressed(KeyCode::Space) {
+        state.set(GameState::Playing).unwrap();
     }
 }
 
@@ -211,15 +216,34 @@ pub fn wall_respawn(mut walls_query: Query<&mut Transform, With<Wall>>) {
 }
 pub fn accelerate(
     mut query: Query<&mut Transform, With<MoveY>>,
+    mut game_data: ResMut<GameData>,
     timer: Res<Time>,
-    mut game_timer: ResMut<GameData>,
 ) {
-    if !game_timer.move_timer.tick(timer.delta()).just_finished() {
+    let delta = timer.delta();
+    let boost_factor = game_data.boost_factor;
+
+    if game_data.is_boosting {
+        game_data.move_timer.tick(delta.mul_f32(boost_factor));
+    } else {
+        game_data.move_timer.tick(delta);
+    }
+
+    if !game_data.move_timer.finished() {
         return;
     }
 
     for mut entity_transform in query.iter_mut() {
         entity_transform.translation.y -= TILE_SIZE;
+    }
+}
+
+pub fn boost_player(keyboard_input: Res<Input<KeyCode>>, mut game_data: ResMut<GameData>) {
+    if keyboard_input.just_pressed(KeyCode::Space) {
+        game_data.is_boosting = true;
+    }
+
+    if keyboard_input.just_released(KeyCode::Space) {
+        game_data.is_boosting = false;
     }
 }
 
@@ -231,6 +255,7 @@ pub fn move_player(
     if *state.current() != GameState::Playing {
         return;
     }
+
     let (mut car, mut player_transform) = query.single_mut();
     let mut direction = 0.0;
 

@@ -68,7 +68,7 @@ mod prelude {
             Self {
                 move_timer: Timer::from_seconds(0.08, true),
                 is_boosting: false,
-                boost_factor: 1.1,
+                boost_factor: 2.0,
             }
         }
     }
@@ -121,6 +121,7 @@ fn main() {
                 .with_system(accelerate.before(check_collisions))
                 .with_system(move_player.before(check_collisions))
                 .with_system(play_explosion_sound.after(check_collisions))
+                .with_system(boost_player)
                 .with_system(wall_respawn)
                 .with_system(enemy_respawn)
                 .with_system(check_collisions)
