@@ -5,14 +5,15 @@ const CAR: [&str; 4] = ["_O_", "OOO", "_O_", "O_O"];
 const LEFT_WALL_X: f32 = SCREEN_X + HALF_TILE;
 const RIGHT_WALL_X: f32 = SCREEN_X + SCREEN_WIDTH as f32 * TILE_SIZE - HALF_TILE;
 
-fn anchor_sprite(translation: Vec3) -> SpriteBundle {
+fn anchor_sprite(x: f32, y: f32) -> SpriteBundle {
+    let pos = Vec2::new(x, y);
     SpriteBundle {
         sprite: Sprite {
             color: Color::rgba(0.0, 0.0, 0.0, 0.0),
             ..default()
         },
         transform: Transform {
-            translation,
+            translation: pos.extend(0.0),
             ..default()
         },
         ..default()
@@ -25,19 +26,21 @@ fn draw_car(parent: &mut ChildBuilder) {
         color: TILE_COLOR,
         ..default()
     };
-    let scale = Vec3::new(0.75, 0.75, 0.0);
+    let scale = Vec3::new(0.85, 0.85, 0.0);
 
     for (y, line) in CAR.iter().enumerate() {
         for (x, c) in line.chars().enumerate() {
-            let pos_x = x as f32 * TILE_SIZE - TILE_SIZE;
-            let pos_y = y as f32 * -TILE_SIZE + TILE_SIZE + HALF_TILE;
+            let pos = Vec2::new(
+                x as f32 * TILE_SIZE - TILE_SIZE,
+                y as f32 * -TILE_SIZE + TILE_SIZE + HALF_TILE,
+            );
 
             if c == 'O' {
                 parent.spawn_bundle(SpriteBundle {
                     sprite: sprite.clone(),
                     transform: Transform {
                         scale,
-                        translation: Vec3::new(pos_x, pos_y, 0.0),
+                        translation: Vec2::extend(pos, 0.0),
                         ..default()
                     },
                     ..default()
@@ -45,13 +48,6 @@ fn draw_car(parent: &mut ChildBuilder) {
             }
         }
     }
-}
-
-fn position_in_screen(column: usize) -> (f32, f32) {
-    let pos_x = SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
-    let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * CAR_SPACING;
-
-    (pos_x, pos_y)
 }
 
 pub fn spawn_walls(mut commands: Commands) {
@@ -69,7 +65,7 @@ pub fn spawn_walls(mut commands: Commands) {
                     color: TILE_COLOR,
                     ..default()
                 };
-                let scale = Vec3::new(0.75, 0.75, 0.0);
+                let scale = Vec3::new(0.85, 0.85, 0.0);
 
                 for y in 0..3 {
                     let pos_y = y as f32 * TILE_SIZE - HALF_TILE;
@@ -95,7 +91,7 @@ pub fn spawn_walls(mut commands: Commands) {
                     });
                 }
             })
-            .insert_bundle(anchor_sprite(Vec3::new(0.0, pos_y + y_distance, 0.0)));
+            .insert_bundle(anchor_sprite(0.0, pos_y + y_distance));
     }
 }
 
@@ -104,7 +100,8 @@ pub fn spawn_enemies(mut commands: Commands /* asset_server: Res<AssetServer> */
 
     for y in 0..4 {
         let column = rng.gen_range(0..3);
-        let (pos_x, pos_y) = position_in_screen(column);
+        let pos_x = TileScreen::column_to_coord(column);
+        let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * CAR_SPACING;
         let y_distance = y as f32 * TILE_SIZE * CAR_SPACING;
 
         commands
@@ -113,7 +110,7 @@ pub fn spawn_enemies(mut commands: Commands /* asset_server: Res<AssetServer> */
             .insert(MoveY)
             .insert(Enemy)
             .with_children(draw_car)
-            .insert_bundle(anchor_sprite(Vec3::new(pos_x, pos_y + y_distance, 0.0)));
+            .insert_bundle(anchor_sprite(pos_x, pos_y + y_distance));
 
         // [Debug] Show car numbers
         //
@@ -137,12 +134,12 @@ pub fn spawn_enemies(mut commands: Commands /* asset_server: Res<AssetServer> */
 
 pub fn spawn_player(mut commands: Commands) {
     let column = 1;
-    let (pos_x, _) = position_in_screen(column);
+    let pos_x = TileScreen::column_to_coord(column);
 
     commands
         .spawn()
         .insert(Car { column })
         .insert(Player)
         .with_children(draw_car)
-        .insert_bundle(anchor_sprite(Vec3::new(pos_x, PLAYER_Y, 0.0)));
+        .insert_bundle(anchor_sprite(pos_x, PLAYER_Y));
 }

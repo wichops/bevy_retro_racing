@@ -1,6 +1,7 @@
 mod entities;
 mod spawner;
 mod systems;
+mod tile_screen;
 
 mod prelude {
     pub use bevy::{audio::AudioSink, prelude::*, time::FixedTimestep};
@@ -9,15 +10,15 @@ mod prelude {
     pub const BG_COLOR: &str = "8d9e7b";
     pub const FONT_SIZE: f32 = 48.0;
 
-    pub const PLAYER_Y: f32 = SCREEN_Y + (HALF_TILE * 4.);
+    pub const PLAYER_Y: f32 = SCREEN_Y + (HALF_TILE * 4.0);
     pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
     pub const UI_WIDTH: f32 = 240.0;
     pub const WALL_SPACING: f32 = 5.0;
     pub const CAR_SPACING: f32 = 9.0;
     pub const TILE_SIZE: f32 = 32.0;
-    pub const HALF_TILE: f32 = TILE_SIZE / 2.;
-    pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.;
+    pub const HALF_TILE: f32 = TILE_SIZE / 2.0;
+    pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.0;
 
     pub const PADDING: usize = 2;
 
@@ -82,6 +83,7 @@ mod prelude {
     pub use crate::entities::*;
     pub use crate::spawner::*;
     pub use crate::systems::*;
+    pub use crate::tile_screen::*;
 }
 
 use prelude::*;
