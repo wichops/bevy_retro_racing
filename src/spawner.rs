@@ -22,11 +22,10 @@ fn anchor_sprite(x: f32, y: f32) -> SpriteBundle {
 
 fn draw_car(parent: &mut ChildBuilder) {
     let sprite = Sprite {
-        custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
+        custom_size: Some(Vec2::splat(TILE_SIZE)),
         color: TILE_COLOR,
         ..default()
     };
-    let scale = Vec3::new(0.85, 0.85, 0.0);
 
     for (y, line) in CAR.iter().enumerate() {
         for (x, c) in line.chars().enumerate() {
@@ -39,7 +38,7 @@ fn draw_car(parent: &mut ChildBuilder) {
                 parent.spawn_bundle(SpriteBundle {
                     sprite: sprite.clone(),
                     transform: Transform {
-                        scale,
+                        scale: TileScreen::tile_scale(),
                         translation: Vec2::extend(pos, 0.0),
                         ..default()
                     },
@@ -50,6 +49,37 @@ fn draw_car(parent: &mut ChildBuilder) {
     }
 }
 
+fn draw_walls(parent: &mut ChildBuilder) {
+    let sprite = Sprite {
+        custom_size: Some(Vec2::splat(TILE_SIZE)),
+        color: TILE_COLOR,
+        ..default()
+    };
+
+    for y in 0..3 {
+        let pos_y = y as f32 * TILE_SIZE - HALF_TILE;
+
+        parent.spawn_bundle(SpriteBundle {
+            sprite: sprite.clone(),
+            transform: Transform {
+                scale: TileScreen::tile_scale(),
+                translation: Vec3::new(LEFT_WALL_X, pos_y, 0.0),
+                ..default()
+            },
+            ..default()
+        });
+
+        parent.spawn_bundle(SpriteBundle {
+            sprite: sprite.clone(),
+            transform: Transform {
+                scale: TileScreen::tile_scale(),
+                translation: Vec3::new(RIGHT_WALL_X, pos_y, 0.0),
+                ..default()
+            },
+            ..default()
+        });
+    }
+}
 pub fn spawn_walls(mut commands: Commands) {
     for y in 0..6 {
         let pos_y = SCREEN_Y as f32 + TILE_SIZE;
@@ -59,38 +89,7 @@ pub fn spawn_walls(mut commands: Commands) {
             .spawn()
             .insert(Wall)
             .insert(MoveY)
-            .with_children(|parent| {
-                let sprite = Sprite {
-                    custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
-                    color: TILE_COLOR,
-                    ..default()
-                };
-                let scale = Vec3::new(0.85, 0.85, 0.0);
-
-                for y in 0..3 {
-                    let pos_y = y as f32 * TILE_SIZE - HALF_TILE;
-
-                    parent.spawn_bundle(SpriteBundle {
-                        sprite: sprite.clone(),
-                        transform: Transform {
-                            scale,
-                            translation: Vec3::new(LEFT_WALL_X, pos_y, 0.0),
-                            ..default()
-                        },
-                        ..default()
-                    });
-
-                    parent.spawn_bundle(SpriteBundle {
-                        sprite: sprite.clone(),
-                        transform: Transform {
-                            scale,
-                            translation: Vec3::new(RIGHT_WALL_X, pos_y, 0.0),
-                            ..default()
-                        },
-                        ..default()
-                    });
-                }
-            })
+            .with_children(draw_walls)
             .insert_bundle(anchor_sprite(0.0, pos_y + y_distance));
     }
 }

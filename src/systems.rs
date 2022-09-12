@@ -199,9 +199,7 @@ pub fn enemy_respawn(mut enemies_query: Query<&mut Transform, With<Enemy>>) {
             let pos_y = SCREEN_Y + SCREEN_HEIGHT as f32 * TILE_SIZE + TILE_SIZE * CAR_SPACING;
             enemy_transform.translation.y = pos_y;
 
-            let pos_x =
-                SCREEN_X + (column as f32 * COLUMN_SIZE) + (HALF_TILE * 3.) + TILE_SIZE * 2.;
-            enemy_transform.translation.x = pos_x;
+            enemy_transform.translation.x = TileScreen::column_to_coord(column);
         }
     }
 }
