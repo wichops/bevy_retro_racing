@@ -62,14 +62,16 @@ mod prelude {
         pub move_timer: Timer,
         pub is_boosting: bool,
         pub boost_factor: f32,
+        pub speed_factor: f32,
     }
 
     impl GameData {
         pub fn new() -> Self {
             Self {
                 move_timer: Timer::from_seconds(0.08, true),
-                is_boosting: false,
+                speed_factor: 1.0,
                 boost_factor: 2.0,
+                is_boosting: false,
             }
         }
     }

@@ -219,11 +219,14 @@ pub fn accelerate(
 ) {
     let delta = timer.delta();
     let boost_factor = game_data.boost_factor;
+    let speed_factor = game_data.speed_factor;
 
     if game_data.is_boosting {
-        game_data.move_timer.tick(delta.mul_f32(boost_factor));
+        game_data
+            .move_timer
+            .tick(delta.mul_f32(boost_factor * speed_factor));
     } else {
-        game_data.move_timer.tick(delta);
+        game_data.move_timer.tick(delta.mul_f32(speed_factor));
     }
 
     if !game_data.move_timer.finished() {
@@ -278,6 +281,7 @@ pub fn check_collisions(
     mut scoreboard: ResMut<Scoreboard>,
     mut collision_events: EventWriter<CollisionEvent>,
     mut state: ResMut<State<GameState>>,
+    mut game_data: ResMut<GameData>,
     audio_sinks: Res<Assets<AudioSink>>,
     motor_controller: Res<MotorController>,
 ) {
@@ -307,6 +311,7 @@ pub fn check_collisions(
 
             scoreboard.highscore = cmp::max(scoreboard.highscore, scoreboard.score);
             scoreboard.score = 0;
+            game_data.speed_factor = 1.0;
 
             if let Some(sink) = audio_sinks.get(&motor_controller.0) {
                 sink.pause();
@@ -332,9 +337,16 @@ pub fn update_scoreboard(score_resource: Res<Scoreboard>, mut score_query: Query
         .value = score_resource.highscore.to_string();
 }
 
-pub fn increment_scoreboard(mut scoreboard: ResMut<Scoreboard>, state: Res<State<GameState>>) {
+pub fn increment_scoreboard(
+    mut scoreboard: ResMut<Scoreboard>,
+    mut game_data: ResMut<GameData>,
+    state: Res<State<GameState>>,
+) {
     if *state.current() != GameState::Playing {
         return;
     }
     scoreboard.score += 100;
+
+    let factor = (scoreboard.score as f32 / 1000.0).floor() * 0.02 + 1.0;
+    game_data.speed_factor = factor;
 }

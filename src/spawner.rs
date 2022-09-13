@@ -80,6 +80,7 @@ fn draw_walls(parent: &mut ChildBuilder) {
         });
     }
 }
+
 pub fn spawn_walls(mut commands: Commands) {
     for y in 0..6 {
         let pos_y = SCREEN_Y as f32 + TILE_SIZE;
