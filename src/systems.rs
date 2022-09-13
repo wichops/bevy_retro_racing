@@ -13,7 +13,7 @@ pub fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
     let button_entity = commands
         .spawn_bundle(ButtonBundle {
             style: Style {
-                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                size: Size::new(Val::Px(100.0), Val::Px(45.0)),
                 // center button
                 margin: UiRect::all(Val::Auto),
                 position: UiRect {
@@ -32,7 +32,7 @@ pub fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
                 "Play",
                 TextStyle {
                     font: asset_server.load("fonts/Calculator.ttf"),
-                    font_size: 40.0,
+                    font_size: 20.0,
                     color: Color::rgb(0.9, 0.9, 0.9),
                 },
             ));
@@ -132,7 +132,7 @@ pub fn setup(
                     display: Display::Flex,
                     justify_content: JustifyContent::FlexEnd,
                     position: UiRect {
-                        top: Val::Px(160.),
+                        top: Val::Px(120.),
                         right: Val::Px(20.),
                         ..default()
                     },

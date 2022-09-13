@@ -8,23 +8,23 @@ mod prelude {
     pub use rand::prelude::*;
 
     pub const BG_COLOR: &str = "8d9e7b";
-    pub const FONT_SIZE: f32 = 48.0;
+    pub const FONT_SIZE: f32 = 32.0;
 
     pub const PLAYER_Y: f32 = SCREEN_Y + (HALF_TILE * 4.0);
     pub const TILE_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.98);
 
-    pub const UI_WIDTH: f32 = 240.0;
+    pub const UI_WIDTH: f32 = 120.0;
     pub const WALL_SPACING: f32 = 5.0;
     pub const CAR_SPACING: f32 = 9.0;
-    pub const TILE_SIZE: f32 = 32.0;
+    pub const TILE_SIZE: f32 = 20.0;
     pub const HALF_TILE: f32 = TILE_SIZE / 2.0;
     pub const COLUMN_SIZE: f32 = TILE_SIZE * 3.0;
 
     pub const PADDING: usize = 2;
 
     pub const WINDOW_PADDING: f32 = 20.0;
-    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING;
-    pub const WINDOW_WIDTH: f32 = UI_WIDTH + SCREEN_WIDTH as f32 * TILE_SIZE + WINDOW_PADDING;
+    pub const WINDOW_HEIGHT: f32 = SCREEN_HEIGHT as f32 * TILE_SIZE + WINDOW_PADDING * 2.0;
+    pub const WINDOW_WIDTH: f32 = UI_WIDTH + SCREEN_WIDTH as f32 * TILE_SIZE + WINDOW_PADDING * 2.0;
 
     pub const SCREEN_X: f32 = WINDOW_WIDTH as f32 / -2. + WINDOW_PADDING;
     pub const SCREEN_Y: f32 = WINDOW_HEIGHT as f32 / -2. + WINDOW_PADDING;
@@ -91,6 +91,7 @@ mod prelude {
 use prelude::*;
 
 fn main() {
+    println!("{}, {}", WINDOW_WIDTH, WINDOW_HEIGHT);
     App::new()
         .insert_resource(WindowDescriptor {
             title: "Carritos".to_string(),
