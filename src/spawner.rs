@@ -35,7 +35,7 @@ fn draw_car(parent: &mut ChildBuilder) {
             );
 
             if c == 'O' {
-                parent.spawn_bundle(SpriteBundle {
+                parent.spawn(SpriteBundle {
                     sprite: sprite.clone(),
                     transform: Transform {
                         scale: TileScreen::tile_scale(),
@@ -59,7 +59,7 @@ fn draw_walls(parent: &mut ChildBuilder) {
     for y in 0..3 {
         let pos_y = y as f32 * TILE_SIZE - HALF_TILE;
 
-        parent.spawn_bundle(SpriteBundle {
+        parent.spawn(SpriteBundle {
             sprite: sprite.clone(),
             transform: Transform {
                 scale: TileScreen::tile_scale(),
@@ -69,7 +69,7 @@ fn draw_walls(parent: &mut ChildBuilder) {
             ..default()
         });
 
-        parent.spawn_bundle(SpriteBundle {
+        parent.spawn(SpriteBundle {
             sprite: sprite.clone(),
             transform: Transform {
                 scale: TileScreen::tile_scale(),
@@ -87,11 +87,9 @@ pub fn spawn_walls(mut commands: Commands) {
         let y_distance = y as f32 * TILE_SIZE * WALL_SPACING;
 
         commands
-            .spawn()
-            .insert(Wall)
-            .insert(MoveY)
+            .spawn((Wall, MoveY))
             .with_children(draw_walls)
-            .insert_bundle(anchor_sprite(0.0, pos_y + y_distance));
+            .insert(anchor_sprite(0.0, pos_y + y_distance));
     }
 }
 
@@ -105,12 +103,9 @@ pub fn spawn_enemies(mut commands: Commands /* asset_server: Res<AssetServer> */
         let y_distance = y as f32 * TILE_SIZE * CAR_SPACING;
 
         commands
-            .spawn()
-            .insert(Car { column })
-            .insert(MoveY)
-            .insert(Enemy)
+            .spawn((Car { column }, MoveY, Enemy))
             .with_children(draw_car)
-            .insert_bundle(anchor_sprite(pos_x, pos_y + y_distance));
+            .insert(anchor_sprite(pos_x, pos_y + y_distance));
 
         // [Debug] Show car numbers
         //
@@ -137,9 +132,7 @@ pub fn spawn_player(mut commands: Commands) {
     let pos_x = TileScreen::column_to_coord(column);
 
     commands
-        .spawn()
-        .insert(Car { column })
-        .insert(Player)
+        .spawn((Car { column }, Player))
         .with_children(draw_car)
-        .insert_bundle(anchor_sprite(pos_x, PLAYER_Y));
+        .insert(anchor_sprite(pos_x, PLAYER_Y));
 }

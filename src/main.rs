@@ -41,7 +41,7 @@ mod prelude {
         pub highscore: Option<Entity>,
     }
 
-    #[derive(Default)]
+    #[derive(Default, Resource)]
     pub struct Scoreboard {
         pub score: usize,
         pub highscore: usize,
@@ -54,10 +54,12 @@ mod prelude {
         Playing,
     }
 
+    #[derive(Resource)]
     pub struct MenuData {
         pub button_entity: Entity,
     }
 
+    #[derive(Resource)]
     pub struct GameData {
         pub move_timer: Timer,
         pub is_boosting: bool,
@@ -68,7 +70,7 @@ mod prelude {
     impl GameData {
         pub fn new() -> Self {
             Self {
-                move_timer: Timer::from_seconds(0.08, true),
+                move_timer: Timer::from_seconds(0.08, TimerMode::Repeating),
                 speed_factor: 1.0,
                 boost_factor: 2.0,
                 is_boosting: false,
@@ -93,17 +95,19 @@ use prelude::*;
 fn main() {
     println!("{}, {}", WINDOW_WIDTH, WINDOW_HEIGHT);
     App::new()
-        .insert_resource(WindowDescriptor {
-            title: "Carritos".to_string(),
-            resizable: false,
-            width: WINDOW_WIDTH,
-            height: WINDOW_HEIGHT,
-            ..default()
-        })
         .init_resource::<Scoreboard>()
         .init_resource::<GameData>()
         .insert_resource(ClearColor(Color::hex(BG_COLOR).unwrap()))
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: "Carritos".to_string(),
+                resizable: false,
+                width: WINDOW_WIDTH,
+                height: WINDOW_HEIGHT,
+                ..default()
+            },
+            ..default()
+        }))
         .add_state(GameState::Menu)
         .add_startup_system(setup)
         .add_event::<CollisionEvent>()

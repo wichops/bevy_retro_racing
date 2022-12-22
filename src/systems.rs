@@ -1,17 +1,18 @@
 pub use crate::prelude::*;
 use std::cmp;
 
-#[derive(Default)]
+#[derive(Resource)]
 pub struct ExplosionSound(Handle<AudioSource>);
 
-#[derive(Default)]
+#[derive(Resource)]
 pub struct MotorSound(Handle<AudioSource>);
 
+#[derive(Resource)]
 pub struct MotorController(Handle<AudioSink>);
 
 pub fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
     let button_entity = commands
-        .spawn_bundle(ButtonBundle {
+        .spawn(ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(100.0), Val::Px(45.0)),
                 // center button
@@ -24,11 +25,11 @@ pub fn setup_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            color: NORMAL_BUTTON.into(),
+            background_color: NORMAL_BUTTON.into(),
             ..default()
         })
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle::from_section(
+            parent.spawn(TextBundle::from_section(
                 "Play",
                 TextStyle {
                     font: asset_server.load("fonts/Calculator.ttf"),
@@ -45,7 +46,7 @@ pub fn menu(
     mut state: ResMut<State<GameState>>,
     keyboard_input: Res<Input<KeyCode>>,
     mut interaction_query: Query<
-        (&Interaction, &mut UiColor),
+        (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
 ) {
@@ -81,7 +82,7 @@ pub fn setup(
 ) {
     let window = windows.primary_mut();
     window.center_window(MonitorSelection::Current);
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 
     let explosion_sound = asset_server.load("sounds/explosion.ogg");
     commands.insert_resource(ExplosionSound(explosion_sound));
@@ -99,7 +100,7 @@ pub fn setup(
 
     score_resource.entities.score = Some(
         commands
-            .spawn_bundle(
+            .spawn(
                 TextBundle::from_sections([
                     TextSection::new("SCORE\n", text_style.clone()),
                     TextSection::new(score_resource.score.to_string(), text_style.clone()),
@@ -122,7 +123,7 @@ pub fn setup(
 
     score_resource.entities.highscore = Some(
         commands
-            .spawn_bundle(
+            .spawn(
                 TextBundle::from_sections([
                     TextSection::new("HISCORE\n", text_style.clone()),
                     TextSection::new(score_resource.highscore.to_string(), text_style),
@@ -145,7 +146,7 @@ pub fn setup(
 
     for x in 0..SCREEN_WIDTH {
         for y in 0..SCREEN_HEIGHT {
-            commands.spawn_bundle(SpriteBundle {
+            commands.spawn(SpriteBundle {
                 sprite: Sprite {
                     color: Color::rgba(0.0, 0.0, 0.0, 0.1),
                     custom_size: Some(Vec2::new(TILE_SIZE, TILE_SIZE)),
