@@ -1,5 +1,5 @@
 # Brick Game Car Racing
-A clone of the classic Brick Game car racing game clone made in Bevy. 
+A clone of the classic Brick Game car racing clone made in Bevy. 
 I made this project to test out Bevy's framework. Enforce my Rust language learning and do some game development just for fun!
 
 ###  Current gameplay gif
